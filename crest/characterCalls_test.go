@@ -26,6 +26,28 @@ func newMockTransport(body string) http.RoundTripper {
 	return &mockTransport{body}
 }
 
+type mockTransport_flippable struct {
+	BodyActive    string
+	BodySecondary string
+}
+
+func (t *mockTransport_flippable) RoundTrip(req *http.Request) (*http.Response, error) {
+	response := &http.Response{
+		Header:     make(http.Header),
+		Request:    req,
+		StatusCode: http.StatusOK,
+	}
+	response.Header.Set("Content-Type", "application/json")
+	response.Body = ioutil.NopCloser(strings.NewReader(t.BodyActive))
+	var temp = t.BodyActive
+	t.BodyActive = t.BodySecondary
+	t.BodySecondary = temp
+	return response, nil
+}
+func newMockFlippableTransport(bodyA string, bodyB string) http.RoundTripper {
+	return &mockTransport_flippable{bodyA, bodyB}
+}
+
 func Test_charContacts(t *testing.T) {
 	mockClient := http.DefaultClient
 	var body string = `{ "totalCount_str": "1024", "pageCount": 6, "items": [ { "standing": 3.5, "character": { "name": "0men666", "corporation": { "name": "Far-East Corporation", "isNPC": false, "href": "https://api-sisi.testeveonline.com/corporations/98196279/", "id_str": "98196279", "logo": { "32x32": { "href": "https://image.testeveonline.com/Corporation/98196279_32.png" }, "64x64": { "href": "https://image.testeveonline.com/Corporation/98196279_64.png" }, "128x128": { "href": "https://image.testeveonline.com/Corporation/98196279_128.png" }, "256x256": { "href": "https://image.testeveonline.com/Corporation/98196279_256.png" } }, "id": 98196279 }, "isNPC": false, "href": "https://api-sisi.testeveonline.com/characters/1600000294/", "capsuleer": { "href": "https://api-sisi.testeveonline.com/characters/1600000294/capsuleer/" }, "portrait": { "32x32": { "href": "https://image.testeveonline.com/Character/1600000294_32.jpg" }, "64x64": { "href": "https://image.testeveonline.com/Character/1600000294_64.jpg" }, "128x128": { "href": "https://image.testeveonline.com/Character/1600000294_128.jpg" }, "256x256": { "href": "https://image.testeveonline.com/Character/1600000294_256.jpg" } }, "id": 1600000294, "id_str": "1600000294" }, "contact": { "id_str": "1600000294", "href": "https://api-sisi.testeveonline.com/characters/1600000294/", "name": "0men666", "id": 1600000294 }, "href": "https://api-sisi.testeveonline.com/characters/92095466/contacts/1600000294/", "contactType": "Character", "watched": true, "blocked": false } ], "totalCount": 1024, "pageCount_str": "6" }`
@@ -38,7 +60,24 @@ func Test_charContacts(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error with cause %+v\n", err)
 	} else {
-		t.Errorf("Success, response size is %v\n", len(items))
+		t.Logf("Success, response size is %v\n", len(items))
+	}
+}
+
+func Test_charContacts_paged(t *testing.T) {
+	mockClient := http.DefaultClient
+	var bodyA string = `{ "totalCount_str": "1024", "pageCount": 6, "items": [ { "standing": 3.5, "character": { "name": "0men666", "corporation": { "name": "Far-East Corporation", "isNPC": false, "href": "https://api-sisi.testeveonline.com/corporations/98196279/", "id_str": "98196279", "logo": { "32x32": { "href": "https://image.testeveonline.com/Corporation/98196279_32.png" }, "64x64": { "href": "https://image.testeveonline.com/Corporation/98196279_64.png" }, "128x128": { "href": "https://image.testeveonline.com/Corporation/98196279_128.png" }, "256x256": { "href": "https://image.testeveonline.com/Corporation/98196279_256.png" } }, "id": 98196279 }, "isNPC": false, "href": "https://api-sisi.testeveonline.com/characters/1600000294/", "capsuleer": { "href": "https://api-sisi.testeveonline.com/characters/1600000294/capsuleer/" }, "portrait": { "32x32": { "href": "https://image.testeveonline.com/Character/1600000294_32.jpg" }, "64x64": { "href": "https://image.testeveonline.com/Character/1600000294_64.jpg" }, "128x128": { "href": "https://image.testeveonline.com/Character/1600000294_128.jpg" }, "256x256": { "href": "https://image.testeveonline.com/Character/1600000294_256.jpg" } }, "id": 1600000294, "id_str": "1600000294" }, "contact": { "id_str": "1600000294", "href": "https://api-sisi.testeveonline.com/characters/1600000294/", "name": "0men666", "id": 1600000294 }, "href": "https://api-sisi.testeveonline.com/characters/92095466/contacts/1600000294/", "contactType": "Character", "watched": true, "blocked": false } ], "totalCount": 1024, "pageCount_str": "6", "next":{ "href" : "https://crest-tq.eveonline.com/characters/67890/contacts/?page=2"} }`
+	var bodyB string = `{ "totalCount_str": "1024", "pageCount": 6, "items": [ { "standing": 3.5, "character": { "name": "0men666", "corporation": { "name": "Far-East Corporation", "isNPC": false, "href": "https://api-sisi.testeveonline.com/corporations/98196279/", "id_str": "98196279", "logo": { "32x32": { "href": "https://image.testeveonline.com/Corporation/98196279_32.png" }, "64x64": { "href": "https://image.testeveonline.com/Corporation/98196279_64.png" }, "128x128": { "href": "https://image.testeveonline.com/Corporation/98196279_128.png" }, "256x256": { "href": "https://image.testeveonline.com/Corporation/98196279_256.png" } }, "id": 98196279 }, "isNPC": false, "href": "https://api-sisi.testeveonline.com/characters/1600000294/", "capsuleer": { "href": "https://api-sisi.testeveonline.com/characters/1600000294/capsuleer/" }, "portrait": { "32x32": { "href": "https://image.testeveonline.com/Character/1600000294_32.jpg" }, "64x64": { "href": "https://image.testeveonline.com/Character/1600000294_64.jpg" }, "128x128": { "href": "https://image.testeveonline.com/Character/1600000294_128.jpg" }, "256x256": { "href": "https://image.testeveonline.com/Character/1600000294_256.jpg" } }, "id": 1600000294, "id_str": "1600000294" }, "contact": { "id_str": "1600000294", "href": "https://api-sisi.testeveonline.com/characters/1600000294/", "name": "0men666", "id": 1600000294 }, "href": "https://api-sisi.testeveonline.com/characters/92095466/contacts/1600000294/", "contactType": "Character", "watched": true, "blocked": false } ], "totalCount": 1024, "pageCount_str": "6" }`
+	mockClient.Transport = newMockFlippableTransport(bodyA, bodyB)
+	utilClient = mockClient
+
+	var accesstoken = "12345"
+	var characterid = 67890
+	items, err := Character_Contacts_Get(accesstoken, characterid)
+	if err != nil {
+		t.Errorf("Unexpected error with cause %+v\n", err)
+	} else {
+		t.Logf("Success, response size is %v\n", len(items))
 	}
 }
 

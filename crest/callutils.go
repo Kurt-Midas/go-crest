@@ -66,3 +66,11 @@ func RemoteCall(request *http.Request, returnObj Any) error {
 	}
 	return nil
 }
+
+func RequestCall(method string, rawurl string, accesstoken string, data url.Values, returnObj Any) error {
+	req, reqErr := BuildAuthRequest(method, rawurl, accesstoken, data)
+	if reqErr != nil {
+		return reqErr
+	}
+	return RemoteCall(req, returnObj)
+}

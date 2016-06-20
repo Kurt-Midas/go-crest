@@ -8,7 +8,7 @@ import (
 	// "html"
 	"net/http"
 	// "net/url"
-	"github.com/kurt-midas/go-crest/calls"
+	// "github.com/kurt-midas/go-crest/calls"
 	"github.com/kurt-midas/go-crest/crest"
 )
 
@@ -21,7 +21,7 @@ var state = ""
 func main() {
 	fmt.Println("Hello World!")
 	routes.HelloWorldRoute()
-	calls.AvoidWarning()
+	// calls.AvoidWarning()
 	crest.AvoidWarning()
 
 	// fmt.Println(app.GetSSORedirectURL())

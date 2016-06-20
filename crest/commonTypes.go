@@ -13,4 +13,11 @@ type SubHref struct {
 	Href string `json:"href"`
 }
 
+type ItemTypeDescription struct {
+	ID_str string `json:"id_str"`
+	Href   string `json:"href"`
+	ID     int    `json:"id"`
+	Name   string `json:"name"`
+}
+
 type Any interface{}
