@@ -9,6 +9,7 @@ import (
 	"net/http"
 	// "net/url"
 	"github.com/kurt-midas/go-crest/calls"
+	"github.com/kurt-midas/go-crest/crest"
 )
 
 var app = sso.Conf{"http://localhost:3000/auth/completeHandshake",
@@ -21,6 +22,7 @@ func main() {
 	fmt.Println("Hello World!")
 	routes.HelloWorldRoute()
 	calls.AvoidWarning()
+	crest.AvoidWarning()
 
 	// fmt.Println(app.GetSSORedirectURL())
 

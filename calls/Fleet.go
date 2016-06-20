@@ -5,6 +5,7 @@ import (
 	"github.com/kurt-midas/go-crest/utils"
 	"net/http"
 	"net/url"
+	"strconv"
 )
 
 func AvoidWarning() {
@@ -56,42 +57,71 @@ func FleetBaseGetCall(rawfleetstr string, accesstoken string) (error, FleetBaseF
 		return reqErr, FleetBaseFormat{}
 	}
 	var respStruct = new(FleetBaseFormat)
-	callErr := utils.RemoteCall(req, *respStruct)
+	// fmt.Printf("FleetBaseGetCall :: Pre-call %+v\n", respStruct)
+	callErr := utils.RemoteCall(req, respStruct)
+	// fmt.Printf("FleetBaseGetCall :: Post-call %+v\n", respStruct)
 	if callErr != nil {
 		return callErr, *respStruct
 	}
 	return nil, *respStruct
 }
 
-func FleetWingsGetCall(fleetid int, accesstoken string) (error, FleetWingsFormat) {
-	reqErr, req := utils.BuildCrestCallRequest("GET", "/fleets/"+string(fleetid)+"/wings/", accesstoken, url.Values{})
+func FleetWingsGetUrl(fleetid int) string {
+	return utils.CrestDomain + "/fleets/" + strconv.Itoa(fleetid) + "/wings/"
+}
+
+func FleetWingsGetCall(rawurl string, accesstoken string) (error, FleetWingsFormat) {
+	// var rawurl = utils.CrestDomain + "/fleets/" + string(fleetid) + "/wings/"
+	reqErr, req := utils.BuildCrestCallRequest("GET", rawurl, accesstoken, url.Values{})
 	if reqErr != nil {
 		return reqErr, FleetWingsFormat{}
 	}
 	var respStruct = new(FleetWingsFormat)
-	callErr := utils.RemoteCall(req, *respStruct)
+	callErr := utils.RemoteCall(req, respStruct)
 	if callErr != nil {
 		return callErr, *respStruct
 	}
 	return nil, *respStruct
 }
 
-func FleetMemberGetCall(fleetid int, accesstoken string) (error, FleetMembersFormat) {
-	reqErr, req := utils.BuildCrestCallRequest("GET", "/fleets/"+string(fleetid)+"/members/", accesstoken, url.Values{})
-	if reqErr != nil {
-		return reqErr, FleetMembersFormat{}
-	}
+func FleetMembersGetUrl(fleetid int) string {
+	return utils.CrestDomain + "/fleets/" + strconv.Itoa(fleetid) + "/members/"
+}
+
+func FleetMembersGetCall(rawurl string, accesstoken string) (error, []FleetMemberItems) {
+	// var rawurl = utils.CrestDomain+"/fleets/"+string(fleetid)+"/members/"
+	reqErr, req := utils.BuildCrestCallRequest("GET", rawurl, accesstoken, url.Values{})
 	var respStruct = new(FleetMembersFormat)
-	callErr := utils.RemoteCall(req, *respStruct)
-	if callErr != nil {
-		return callErr, *respStruct
+	if reqErr != nil {
+		return reqErr, respStruct.Items
 	}
-	return nil, *respStruct
+	callErr := utils.RemotePageableCall(req, respStruct)
+	// callErr := utils.RemoteCall(req, respStruct)
+	if callErr != nil {
+		return callErr, respStruct.Items
+	}
+	return nil, respStruct.Items
 }
 
 /******************************
  *******Response Structs*******
  ******************************/
+
+/**** FleetMembersFormat <- utils.Pageable interface ****/
+func (c FleetMembersFormat) GetCurrentPageNumber() int { return c.PageCount }
+func (c FleetMembersFormat) GetTotalPageCount() int    { return c.TotalCount }
+func (c FleetMembersFormat) GetNext() utils.SubHref    { return c.Next }
+func (c FleetMembersFormat) GetItems() utils.Any       { return c.Items }
+func (c FleetMembersFormat) SetItems(a utils.Any) {
+	if val, ok := a.([]FleetMemberItems); ok {
+		c.Items = val
+	} else {
+		fmt.Printf("Bad format :: %+v\n\n", a)
+		fmt.Println("FleetMembersFormat setItems failure, wrong type")
+	}
+}
+
+/***Structs***/
 
 type FleetBaseFormat struct {
 	IsVoiceEnabled bool          `json:"isVoiceEnabled"`
@@ -108,6 +138,7 @@ type FleetMembersFormat struct {
 	PageCount      int                `json:"pageCount"`
 	PageCount_str  string             `json:"pageCount_str"`
 	TotalCount     int                `json:"totalCount"`
+	Next           utils.SubHref      `json:"next"`
 }
 
 type FleetMemberItems struct {

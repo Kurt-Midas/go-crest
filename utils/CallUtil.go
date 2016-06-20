@@ -3,11 +3,15 @@ package utils
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"regexp"
 )
+
+var Client = &http.Client{}
 
 type Any interface{}
 
@@ -43,6 +47,17 @@ const CrestDomain string = "https://crest-tq.eveonline.com"
 func BuildCrestCallRequest(method string, rawurl string, accesstoken string, data url.Values) (error, *http.Request) {
 	// var crestDomain = "https://crest-tq.eveonline.com"
 	// var rawurl = crestDomain + path
+
+	if validMethod, _ := regexp.MatchString("(GET|POST|PUT|DELETE|PATCH)", method); !validMethod {
+		return errors.New("Invalid method type '" + method + "'"), nil
+	}
+	if validUrl, _ := regexp.MatchString("(http|https)://.*", rawurl); !validUrl {
+		return errors.New("Invalid url string '" + rawurl + "'"), nil
+	}
+	if accesstoken == "" {
+		return errors.New("BuildCrestCallRequest requires an access token"), nil
+	}
+
 	urlStr, urlErr := url.Parse(rawurl)
 	if urlErr != nil {
 		return urlErr, nil
@@ -74,9 +89,10 @@ func RemoteCall(request *http.Request, returnObj Any) error {
 	if bytesErr != nil {
 		return bytesErr
 	}
-	fmt.Printf("Resp :: %v\n", respBytes)
-	jsonErr := json.Unmarshal(respBytes, returnObj)
-	fmt.Printf("Json :: %+v\n", returnObj)
+	// fmt.Printf("RemoteCall :: Resp :: %v\n", respBytes)
+	// fmt.Printf("RemoteCall :: Pre-Json :: %+v\n", returnObj)
+	jsonErr := json.Unmarshal(respBytes, &returnObj)
+	// fmt.Printf("RemoteCall :: Json :: %+v\n", returnObj)
 	if jsonErr != nil {
 		return jsonErr
 	}
@@ -107,9 +123,9 @@ func RemotePageableCall(request *http.Request, pageObj Pageable) error {
 		if bytesErr != nil {
 			return bytesErr
 		}
-		fmt.Printf("Resp :: %v\n", respBytes)
+		// fmt.Printf("Resp :: %v\n", respBytes)
 		jsonErr := json.Unmarshal(respBytes, pageObj)
-		fmt.Printf("Json :: %+v\n", pageObj)
+		// fmt.Printf("Json :: %+v\n", pageObj)
 		if jsonErr != nil {
 			return jsonErr
 		}
