@@ -6,67 +6,30 @@ import ()
 ******Char Contacts types******
 ******************************/
 type CharContactsFormat struct {
-	PageCount      int                `json:"pageCount"`
-	PageCount_str  string             `json:"pageCount_str"`
-	TotalCount     int                `json:"totalCount"`
-	TotalCount_str string             `json:"totalCount_str"`
-	Items          []CharContactItems `json:"items"`
-	Next           SubHref            `json:"next"`
+	Pageable
+	Items []CharContactItems `json:"items"`
 }
 type CharContactItems struct {
 	Standing    float32             `json:"standing"`
-	Character   CharContactItemChar `json:"character"`
-	Contact     CharContactContact  `json:"contact"`
+	Character   CharDetails         `json:"character"`
+	Contact     ItemTypeDescription `json:"contact"`
 	Href        string              `json:"href"`
 	ContactType string              `json:"contactType"`
 	Watched     bool                `json:"watched"`
 	Blocked     bool                `json:"blocked"`
 }
 
-type CharContactItemChar struct {
-	Name      string          `json:"name"`
-	Character CharContactCorp `json:"character"`
-	IsNPC     bool            `json:"isNPC"`
-	Href      string          `json:"href"`
-	Capsuleer SubHref         `json:"capsuleer"`
-	Portrait  ImgStruct       `json:"portrait"`
-	ID        int             `json:"id"`
-	ID_str    string          `json:"id_str"`
-}
-
-type CharContactCorp struct {
-	Name   string    `json:"name"`
-	IsNPC  bool      `json:"isNPC"`
-	Href   string    `json:"href"`
-	ID_str string    `json:"id_str"`
-	ID     int       `json:"id"`
-	Logo   ImgStruct `json:"logo"`
-}
-
-type CharContactContact struct {
-	ID_str string `json:"id_str"`
-	Href   string `json:"href"`
-	Name   string `json:"name"`
-	ID     int    `json:"id"`
-}
-
 /******************************
 ******Char Fittings types******
 ******************************/
-
 type CharFittingsFormat struct {
-	PageCount      int                `json:"pageCount"`
-	PageCount_str  string             `json:"pageCount_str"`
-	TotalCount     int                `json:"totalCount"`
-	TotalCount_str string             `json:"totalCount_str"`
-	Items          []CharFittingsItem `json:"items"`
-	Next           SubHref            `json:"next"`
+	Pageable
+	Items []CharFittingsItem `json:"items"`
 }
-
 type CharFittingsItem struct {
 	Description   string              `json:"description"`
 	FittingID_str string              `json:"fittingID_str"`
-	Items         CharFittingModule   `json:"items"`
+	Items         []CharFittingModule `json:"items"`
 	FittingID     int                 `json:"fittingID"`
 	Ship          ItemTypeDescription `json:"ship"`
 	Href          string              `json:"href"`
@@ -79,4 +42,30 @@ type CharFittingModule struct {
 	Quantity     int                 `json:"quantity"`
 	Quantity_str string              `json:"quantity_str"`
 	Type         ItemTypeDescription `json:"type"`
+}
+
+/******************************
+******Char Location types******
+******************************/
+
+type CharLocationType struct {
+	SolarSystem ItemTypeDescription `json:"solarSystem"`
+}
+
+/******************************
+****Char Opportunities Types***
+******************************/
+
+type CharOpportunitiesFormat struct {
+	Pageable
+	Items []CharOpportunitiesItem `json:"items"`
+}
+type CharOpportunitiesItem struct {
+	Completed string                `json:"completed"`
+	Task      CharOpportunitiesTask `json:"task"`
+}
+type CharOpportunitiesTask struct {
+	Href   string `json:"href"`
+	ID     int    `json:"id"`
+	ID_str string `json:"id_str"`
 }

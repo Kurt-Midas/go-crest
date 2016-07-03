@@ -27,9 +27,6 @@ func BuildAuthRequest(method string, rawurl string, accesstoken string, data url
 	if validUrl, _ := regexp.MatchString("(http|https)://.*", rawurl); !validUrl {
 		return nil, errors.New("Invalid url string '" + rawurl + "'")
 	}
-	if accesstoken == "" {
-		return nil, errors.New("BuildCrestCallRequest requires an access token")
-	}
 
 	urlStr, urlErr := url.Parse(rawurl)
 	if urlErr != nil {
@@ -39,7 +36,10 @@ func BuildAuthRequest(method string, rawurl string, accesstoken string, data url
 	if reqErr != nil {
 		return nil, reqErr
 	}
-	req.Header.Add("Authorization", "Bearer "+accesstoken)
+	if accesstoken != "" {
+		req.Header.Add("Authorization", "Bearer "+accesstoken)
+		// return nil, errors.New("BuildCrestCallRequest requires an access token")
+	}
 	req.Header.Add("User-Agent", "github.com/kurt-midas/go-crest")
 	return req, nil
 }

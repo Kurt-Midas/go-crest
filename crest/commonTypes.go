@@ -20,4 +20,43 @@ type ItemTypeDescription struct {
 	Name   string `json:"name"`
 }
 
+type ItemIdDetails struct {
+	ID_str string `json:"id_str"`
+	Href   string `json:"href"`
+	ID     int    `json:"id"`
+}
+
+type Pageable struct {
+	TotalCount_str string  `json:"totalCount_str"`
+	PageCount      int     `json:"pageCount"`
+	PageCount_str  string  `json:"pageCount_str"`
+	TotalCount     int     `json:"totalCount"`
+	Next           SubHref `json:"next"`
+}
+
+type CorpDetails struct {
+	Name   string    `json:"name"`
+	IsNPC  bool      `json:"isNPC"`
+	Href   string    `json:"href"`
+	ID_str string    `json:"id_str"`
+	ID     int       `json:"id"`
+	Logo   ImgStruct `json:"logo"`
+}
+
+type CharDetails struct {
+	Name string `json:"name"`
+	// Character CorpDetails `json:"character"`
+	IsNPC     bool      `json:"isNPC"`
+	Href      string    `json:"href"`
+	Capsuleer SubHref   `json:"capsuleer"`
+	Portrait  ImgStruct `json:"portrait"`
+	ID        int       `json:"id"`
+	ID_str    string    `json:"id_str"`
+}
+
+type TypeListContainer struct {
+	Pageable
+	Items []ItemTypeDescription `json:"items"`
+}
+
 type Any interface{}

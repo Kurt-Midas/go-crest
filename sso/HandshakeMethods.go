@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/kurt-midas/go-crest/utils"
 	// "io/ioutil"
+	"errors"
 	"net/http"
 	"net/url"
 	"strings"
@@ -14,8 +15,6 @@ import (
 
 /*
 TODO:
-	Make State a time factor
-	Do something with State, it needs to be verified somehow
 	Error handling : successful but invalid responses from CREST
 */
 
@@ -36,74 +35,56 @@ type OauthTokenResponse struct {
 }
 
 /**********
-Error for invalid usage. Ex: someone tries using an unexpected scope
-**********/
-type InvalidUsageError struct {
-	Message string
-	Cause   string
-}
-
-func (t InvalidUsageError) Error() string {
-	return fmt.Sprintf("SSO Error :: %v :: %v", t.Message, t.Cause)
-}
-
-/**********
 Main type, required for everything else
 **********/
 type Conf struct {
 	CallbackURI  string
 	ClientID     string
 	ClientSecret string
-	Scopes       []string
+	// Scopes       []string
 }
 
 /**
- * Returns the SSO url to send the user to and the state variable
+ *
  * @param  (c Conf)
  * @return (ssoUrl string, state string)   [description]
  */
-func (c Conf) GetSSORedirectURL() (error, url.URL, string) {
-	fmt.Println("GetSSORedirectURL :: conf is", c)
-	var state string = "1234567890" //TODO: add time factor
+func (c Conf) Auth_uri(scopes []string, state string) (url.URL, error) {
+	// fmt.Println("Auth_uri :: conf is", c)
 
 	ssoUrl, err := url.Parse("https://login.eveonline.com/oauth/authorize")
 	if err != nil {
-		return nil, *ssoUrl, ""
+		return *ssoUrl, errors.New("Fatal error parsing SSO url")
 	}
-	// checkErr(err)
 	parameters := url.Values{}
 	parameters.Add("response_type", "code")
 	parameters.Add("redirect_uri", c.CallbackURI)
 	parameters.Add("client_id", c.ClientID)
-	parameters.Add("scope", strings.Join(c.Scopes, " "))
+	parameters.Add("scope", strings.Join(scopes, " "))
 	parameters.Add("state", state)
 	ssoUrl.RawQuery = parameters.Encode()
 
-	// fmt.Println("Query Encode :: " + ssoUrl.Query().Encode())
-	// fmt.Println("ssoUrl :: " + ssoUrl.String())
-	// fmt.Println("Path :: " + ssoUrl.Path)
-	// fmt.Println("Raw Path :: " + ssoUrl.RawPath)
-	// fmt.Println("Request URI :: " + ssoUrl.RequestURI())
-	// fmt.Println("Escaped Path :: " + ssoUrl.EscapedPath())
-	return nil, *ssoUrl, state
+	return *ssoUrl, nil
 }
 
-func (c Conf) CompleteHandshake(w http.ResponseWriter, r *http.Request) (error, OauthTokenResponse) {
-	//code and state
+//Parses callback from Oauth response into "code" and "state"
+//Utility method, no real functionality. Probably shouldn't exist
+func (c Conf) HandleOauthResponse(r *http.Request) (string, string) {
 	// fmt.Println("PublicMethods :: CompleteHandshake :: Query is : ", r.URL.Query())
-	return c.exchangeToken(r.URL.Query().Get("code"), "auth")
+	return r.URL.Query().Get("code"), r.URL.Query().Get("state")
+	// return c.exchangeToken(r.URL.Query().Get("code"), "auth")
 }
 
-func (c Conf) ExchangeAuthToken(token string) (error, OauthTokenResponse) {
-	return c.exchangeToken(token, "auth")
+func (c Conf) AccessToken(authtoken string) (OauthTokenResponse, error) {
+	return c.exchangeToken(authtoken, "auth")
 }
 
-func (c Conf) RefreshToken(token string) (error, OauthTokenResponse) {
-	return c.exchangeToken(token, "refresh")
+func (c Conf) RefreshToken(refreshtoken string) (OauthTokenResponse, error) {
+	return c.exchangeToken(refreshtoken, "refresh")
 }
 
 //valid token types are "auth" and "refresh"
-func (c Conf) exchangeToken(token string, tokenType string) (error, OauthTokenResponse) {
+func (c Conf) exchangeToken(token string, tokenType string) (OauthTokenResponse, error) {
 	var method string = "POST"
 	var urlStr string = "https://login-tq.eveonline.com/oauth/token"
 	data := url.Values{}
@@ -114,14 +95,14 @@ func (c Conf) exchangeToken(token string, tokenType string) (error, OauthTokenRe
 		data.Add("grant_type", "refresh_token")
 		data.Add("refresh_token", token)
 	} else {
-		badUseErr := InvalidUsageError{"Error Exchanging Token", "Only supported types are 'auth' and 'refres', instead got " + tokenType}
+		badUseErr := errors.New("Error Exchanging Token :: Only supported types are 'auth' and 'refresh', instead got " + tokenType)
 		fmt.Printf("PublicMethods :: ExchangeToken :: %v\n", badUseErr.Error())
-		return badUseErr, OauthTokenResponse{}
+		return OauthTokenResponse{}, badUseErr
 	}
 	req, reqErr := http.NewRequest(method, urlStr, bytes.NewBufferString(data.Encode()))
 	// checkErr(reqErr)
 	if reqErr != nil {
-		return reqErr, OauthTokenResponse{}
+		return OauthTokenResponse{}, reqErr
 	}
 	var concat = c.ClientID + ":" + c.ClientSecret
 	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(concat)))
@@ -129,7 +110,7 @@ func (c Conf) exchangeToken(token string, tokenType string) (error, OauthTokenRe
 	var respStruct = new(OauthTokenResponse)
 	callErr := utils.RemoteCall(req, respStruct)
 	if callErr != nil {
-		return callErr, *respStruct
+		return *respStruct, callErr
 	}
-	return nil, *respStruct
+	return *respStruct, nil
 }
