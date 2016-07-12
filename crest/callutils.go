@@ -12,6 +12,7 @@ import (
 )
 
 const CrestDomain string = "https://crest-tq.eveonline.com"
+const crestTypeUrl string = "?type=" + CrestDomain + "/inventory/types/"
 
 var utilClient = &http.Client{}
 
