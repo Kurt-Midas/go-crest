@@ -45,7 +45,7 @@ All API methods and response types are attached directly to the "crest" package.
 
 ##SSO Setup
 Certain calls require an "access token." Generating this requires use of the SSO. A simple program can be found below:
-```
+```go
 package main
 
 import "github.com/kurt-midas/go-crest/sso"
