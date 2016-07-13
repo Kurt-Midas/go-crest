@@ -82,7 +82,7 @@ func MarketHistory_Type(region int, typeId int) ([]MarketTypeHistory, error) {
 
 type MarketHistoryFormat struct {
 	Pageable
-	Items []kMarketTypeHistory `json:"items"`
+	Items []MarketTypeHistory `json:"items"`
 }
 
 type MarketTypeHistory struct {
